@@ -34,11 +34,16 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Build
+      - name: Build (Vite)
         run: npm run build
 
-      - name: Create 404.html fallback
-        run: cp dist/index.html dist/404.html
+      # SPA fallback + disable Jekyll, and verify index.html exists
+      - name: Prepare Pages artifact
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+          test -f dist/index.html || (echo "index.html missing in dist" && exit 1)
+          echo "Artifact files:" && ls -la dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
