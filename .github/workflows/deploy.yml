@@ -2,7 +2,8 @@ name: Build and Deploy (Vite → GitHub Pages)
 
 on:
   push:
-    branches: [ main ]   # deploy whenever main changes
+    branches: [ main ]   # deploy on every push to main
+  workflow_dispatch:      # allows manual run from Actions tab
 
 permissions:
   contents: read
@@ -15,6 +16,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,8 +28,8 @@ jobs:
           node-version: 18
           cache: 'npm'
 
-      # Use npm ci if lockfile exists, otherwise npm install
-      - name: Install dependencies (npm ci if available)
+      # Install deps; if there's a lockfile we'll use npm ci
+      - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
             npm ci --no-audit --no-fund
@@ -35,15 +37,17 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
       - name: Build
         run: npm run build
 
-      # Copy SPA fallback for GitHub Pages (React Router, deep links)
+      # SPA fallback for React Router (prevents 404 on refresh)
       - name: Create 404.html fallback
         run: cp dist/index.html dist/404.html
 
-      # Helpful debug: list dist so you can see outputs if something fails
-      - name: Show dist contents
+      - name: Show dist (debug)
         run: ls -la dist
 
       - name: Upload artifact
@@ -52,12 +56,13 @@ jobs:
           path: dist
 
   deploy:
+    name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
