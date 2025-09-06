@@ -1,1 +1,46 @@
+name: Build to /docs on main (Vite → GitHub Pages)
 
+on:
+  push:
+    branches: [ main ]       # rebuild on every push to main
+  workflow_dispatch:          # allow manual runs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # we will commit back to main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+      # use install (not ci) so new deps in package.json are respected
+        run: npm install --no-audit --no-fund
+
+      - name: Build (Vite)
+        run: npm run build
+
+      - name: Prepare /docs folder for Pages
+        run: |
+          rm -rf docs
+          mkdir -p docs
+          cp -r dist/* docs/
+          # SPA fallback + disable Jekyll
+          cp docs/index.html docs/404.html
+          touch docs/.nojekyll
+          echo "Docs contents:"
+          ls -la docs
+
+      - name: Commit and push /docs to main
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(pages): build site to /docs"
+          file_pattern: docs/**
