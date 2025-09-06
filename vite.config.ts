@@ -5,19 +5,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // 👇 IMPORTANT for GitHub Pages
-  base: "/chaitanya-portifolio/",
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+  base: "/chaitanya-portifolio/", // <-- required for GH Pages
+  server: { host: "::", port: 8080 },
+  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
 }));
